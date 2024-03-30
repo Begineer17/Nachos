@@ -48,6 +48,12 @@ halt: halt.o start.o
 	$(LD) $(LDFLAGS) start.o halt.o -o halt.coff
 	../bin/coff2noff halt.coff halt
 
+readPrintTest.o: readPrintTest.c
+	$(CC) $(CFLAGS) -c readPrintTest.c
+readPrintTest: readPrintTest.o start.o
+	$(LD) $(LDFLAGS) start.o readPrintTest.o -o readPrintTest.coff
+	../bin/coff2noff readPrintTest.coff readPrintTest
+
 shell.o: shell.c
 	$(CC) $(CFLAGS) -c shell.c
 shell: shell.o start.o
