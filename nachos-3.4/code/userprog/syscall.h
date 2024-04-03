@@ -35,6 +35,8 @@
 #define SC_PrintChar		14
 #define SC_ReadString		15
 #define SC_PrintString		16
+#define SC_ReadFloat    17
+#define SC_PrintFloat   18
 
 #ifndef IN_ASM
 
@@ -62,6 +64,10 @@ void PrintChar(char character);
 void ReadString(char buffer[], int length);
 
 void PrintString(char buffer[]);
+
+void ReadFloat();
+
+void PrintFloat(float number);
 
 /* Address space control operations: Exit, Exec, and Join */
 
