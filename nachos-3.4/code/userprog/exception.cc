@@ -57,7 +57,7 @@ void IncreaseCounter()
 {
 	int counter = machine->ReadRegister(PCReg);
    	machine->WriteRegister(PrevPCReg, counter);
-    counter = machine->ReadRegister(NextPCReg);
+    	counter = machine->ReadRegister(NextPCReg);
 	machine->WriteRegister(PCReg, counter);
    	machine->WriteRegister(NextPCReg, counter + 4);
 }
@@ -164,46 +164,47 @@ void ExceptionHandler(ExceptionType which)
 				return;
 
 			case SC_ReadInt:
-	            // Input: None
-	            // Purpose: Return integer read from console
-	            char* buffer = new char[255 + 1];
-	            int noBytes = gSynchConsole->Read(buffer, 255); // write to buffer at most 255 characters
-	            int num = 0; // returned value
-	                
-	            /* Process buffer to integer */
-	    
-	            // check negative                     
-	            int firstIndex = 0;
-	            int lastIndex = 0;
-	            if(buffer[0] == '-')
-	            {
-	                firstIndex = 1;
-	                lastIndex = 1;                        			   		
-	            }
-	            
-	            // check validity
-	            for(int i = firstIndex; i < noBytes; i++)					
-	            {
-	                if(buffer[i] < '0' && buffer[i] > '9' || buffer[i] == '.')
-	                {
-	                    DEBUG('a', "\nNot a valid integer. ");
-				        printf("\nNot a valid integer. ");
-	                    machine->WriteRegister(2, 0);
-	                    IncreaseCounter();
-	                    delete buffer;
-	                    return;
-	                }
-	                lastNumIndex = i;    
-	            }			
-	            
-	            for(int i = firstIndex; i<= lastIndex; i++) num = num * 10 + (int)(buffer[i] - 48); 
-	            
-	            if(buffer[0] == '-') num = -num;
-	            
-	            machine->WriteRegister(2, number);
-	            increaseCounter();
-	            delete buffer;
-	            return;		
+				// Input: None
+				// Purpose: Return integer read from console
+				char* buffer = new char[255 + 1];
+				int noBytes = gSynchConsole->Read(buffer, 255); // write to buffer at most 255 characters
+				int num = 0; // returned value
+					
+				/* Process buffer to integer */
+		
+				// check negative                     
+				int firstIndex = 0;
+				int lastIndex = 0;
+				if(buffer[0] == '-')
+				{
+					firstIndex = 1;
+					lastIndex = 1;                        			   		
+				}
+				
+				// check validity
+				for(int i = firstIndex; i < noBytes; i++)					
+				{
+					if(buffer[i] < '0' && buffer[i] > '9' || buffer[i] == '.')
+					{
+						DEBUG('a', "\nNot a valid integer. ");
+						printf("\nNot a valid integer. ");
+						machine->WriteRegister(2, 0);
+						IncreaseCounter();
+						delete buffer;
+						return;
+					}
+					// Update index of last digit
+					lastNumIndex = i;    
+				}			
+				
+				for(int i = firstIndex; i<= lastIndex; i++) num = num * 10 + (int)(buffer[i] - 48); 
+				
+				if(buffer[0] == '-') num = -num;
+				
+				machine->WriteRegister(2, number);
+				increaseCounter();
+				delete buffer;
+				return;		
 
 
 			case SC_PrintInt:
@@ -214,7 +215,7 @@ void ExceptionHandler(ExceptionType which)
 	            if(number < 0)
 	            {
 	                number = -number;
-	                firstNumIndex = 1; 
+	                firstIndex = 1; 
 	            } 	
 	            
 	            for (int i = number; i > 0; i/=10) noOfnum += 1;
@@ -284,6 +285,77 @@ void ExceptionHandler(ExceptionType which)
 				delete buffer; 
 				IncreaseCounter(); // Tang Program Counter 
 				return;
+
+            case SC_ReadFloat:
+                char* buffer = new char[255 + 1];
+                int noBytes = gSynchConsole->Read(buffer, 255); 
+                float num = 0.0f;
+                int dotIndex = -1;
+                int firstIndex = 0;
+                int sign = 1;
+
+                if (buffer[0] == '-') {
+                    firstIndex = 1;
+                    sign = -1;
+                }
+
+                for (int i = firstIndex; i < noBytes - 1; i++) {
+                    if (buffer[i] == '.') {
+                        dotIndex = i;
+                        continue;
+                    }
+                    num = num * 10 + (buffer[i] - '0');
+                    if (dotIndex != -1) {
+                        dotIndex++;
+                    }
+                }
+
+                while (dotIndex != -1 && dotIndex < noBytes - 1) {
+                    num /= 10;
+                    dotIndex++;
+                }
+
+                num *= sign;
+
+                machine->WriteRegister(2, *(int*)&num);  // Writing float as int for simplicity
+                IncreaseCounter();
+                return;
+
+            case SC_PrintFloat:
+                int numberInt = machine->ReadRegister(4);
+                float number = *(float*)&numberInt;  // Reading int as float for simplicity
+
+                char buffer[255];
+                int idx = 0;
+
+                if (number < 0) {
+                    buffer[idx++] = '-';
+                    number = -number;
+                }
+
+                int integerPart = (int)number;
+                float decimalPart = number - integerPart;
+
+                // Printing integer part
+                idx += snprintf(buffer + idx, sizeof(buffer) - idx, "%d", integerPart);
+
+                // Printing decimal point
+                buffer[idx++] = '.';
+
+                // Printing decimal part
+                for (int i = 0; i < 4; i++) {  // Assuming we want to print up to 4 decimal places
+                    decimalPart *= 10;
+                    int digit = (int)decimalPart;
+                    buffer[idx++] = '0' + digit;
+                    decimalPart -= digit;
+                }
+
+                buffer[idx] = '\0';
+
+                gSynchConsole->Write(buffer, idx);
+                IncreaseCounter();
+                return;
+
 		}
 	}
 }
